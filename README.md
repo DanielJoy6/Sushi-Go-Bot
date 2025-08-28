@@ -44,3 +44,4 @@ Please feel free to submit pull requests if you think you can improve something!
 
 ## Can I use this?
 Sure! Just please credit me if you want to show it off
+danieljoy2345@gmail.com or DanielJoy6 on Github
