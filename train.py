@@ -6,6 +6,7 @@ import pickle
 
 # trunk-ignore-all(pylint/E0401)
 import random
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +17,7 @@ from game import Game
 from player import Player
 
 NUM_CARDS = 5
-NUM_ROUNDS = 100_000_000
+NUM_ROUNDS = 1_000_000
 NUM_ROUNDS_PER_GAME = 1
 INCREMENT = 100000
 NUM_SIMULATION_GAMES = 10000
@@ -68,6 +69,7 @@ def plot_data(temp_evaluation_wins, temp_players, temp_increment):
 
 
 try:
+    start = time.time()
     SAVE_COUNTER = 0
     game = Game(num_cards=NUM_CARDS, players=players, print_info=False)
     for numGames in tqdm(range(NUM_ROUNDS)):
@@ -81,7 +83,7 @@ try:
         if (numGames + 1) % INCREMENT == 0:
             average_update = np.mean(AI1.q_updates[-INCREMENT:])
             AI1.q_updates = []
-            print("Average Q-table update:", average_update)
+            print("\nAverage Q-table update:", average_update)
             print("Epsilon:", AI1.epsilon)
             print(
                 "numGames:", (numGames + 1), "Q-table size:", len(AI1.q_table), end=" "
@@ -115,13 +117,15 @@ try:
             with open(FILENAME, "wb") as file:
                 pickle.dump(AI1.q_table, file)
             SAVE_COUNTER = 1 - SAVE_COUNTER
-            print("Done Saving\n")
+            print("\nDone Saving\n")
 
             AI1.epsilon = EPSILON
 
 except KeyboardInterrupt:
     plot_data(evaluation_wins, players, INCREMENT)
 
+end = time.time()
+print("Time taken:", (end - start))
 # @title Print Stats
 card_types = [
     "Dumpling",
@@ -167,21 +171,30 @@ for state, q_values in q_table.items():
     chosen_card = hand[max_index]
     Popularities[total_cards - 1][chosen_card] += 1
 
-# Print percentages
-for i, popularity in enumerate(Popularities):
-    print(f"\nHand Size {i + 1}:")
-    print("Card\t\tTimes Seen \t Times Played \t % of timesPlayed")
-    total = sum(popularity.values())
+# Print percentages and seen counts together
+for hand_size, popularity in enumerate(Popularities):
+    print(f"\nHand Size {hand_size + 1}:")
+    print("Card\t\tTimes Seen\tTimes Played\t% Played")
+
+    total_played = sum(popularity.values())
     for i, card in enumerate(card_types):
-        count = popularity[card]
-        percent = round(count / total, 4) if total > 0 else 0.0
-        count2 = Seen[i][card]
-        print(
-            f"""{card.ljust(14)} \t {str(count2).ljust(5)} \t
-               {str(count).ljust(5)} \t {str(percent).ljust(10)}"""
+        times_played = popularity[card]
+        times_seen = Seen[hand_size][card]
+        percent_played = (
+            round(times_played / total_played, 4) if total_played > 0 else 0.0
         )
-        percents[i][i] = 100 * percent
-    print("Total:", total)
+
+        print(
+            f"{card.ljust(14)}\t"
+            f"{str(times_seen).ljust(10)}\t"
+            f"{str(times_played).ljust(10)}\t"
+            f"{str(percent_played).ljust(10)}"
+        )
+
+        # Store percentage correctly
+        percents[hand_size][i] = 100 * percent_played
+
+    print("Total Played:", total_played)
 
 # Plot
 plot_colors = [
